@@ -61,7 +61,7 @@ regionAvgs <- train[, list(Regions=.N, RegionAvg=mean(Income)), keyby="RegionID"
 cityAvgs <- train[, list(Cities=.N, CityAvg=mean(Income)), keyby="CityID"]
 
 test <- countryAvgs[test, on="CountryID"]
-test <- regionAvgs[test, -n="RegionID"]
+test <- regionAvgs[test, on="RegionID"]
 test <- cityAvgs[test, on="CityID"]
 
 
