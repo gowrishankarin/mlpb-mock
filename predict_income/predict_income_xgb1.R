@@ -64,11 +64,73 @@ test <- countryAvgs[test, on="CountryID"]
 test <- regionAvgs[test, on="RegionID"]
 test <- cityAvgs[test, on="CityID"]
 
+#===================================================================================
+# XGBoost that puppy
+
+features <- c("Cities", "CityAvg", "Regions", "RegionAvg", "Countries", "CountryAvg")
+
+# Test various hyperparamenters and values here and see what works best. (A poor man's grid search)
+paramList <- list(
+    eta =0.2,
+    gamma = 0,
+    max.depth = 3,
+    min_child_weight = 1,
+    subsample = 0.9,
+    colsample_bytree = 1
+)
+bst.cv <- xgb.cv(
+    params=paramList,
+    data=as.matrix(train_new[, features, with=FALSE]),
+    label=as.matrix(train_new$Income),
+    folds=testIdxs,
+    early_stop_round=3,
+    eval_metric="rmse",
+    nrounds = 200,
+    prediction = TRUE
+)
+bst <- xgboost(
+    params=paramList,
+    data=as.matrix(train_new[, features, with=FALSE]),
+    label=as.matrix(train_new$Income),
+    nrounds = 200
+)
+
+#===================================================================================
+# Predict and Evaluate
+
+# Predict
+train[, IncomeXGB := predict(bst, as.matrix(train_new[, features, with=FALSE]))]
+test[, IncomeXGB := predict(bst, as.matrix(test[, features, with=FALSE]))]
+
+# Trees
+bst.trees <- xgb.model.dt.tree(features, model=bst)
+bst.trees[Tree==0]
+
+# Importance
+xgb.importance(model=bst, features)
 
 
+#------------------------------------------------------------------------------------
+# Importance
+bst.minimal <- xgboost(
+    params = paramList,
+    data = as.matrix(train_new[, features, with=FALSE]),
+    label = as.matrix(train_new$Income),
+    nrounds = 3
+)
+xgb.plot.tree(features, model = bst.minimal)
 
 
+#-----------------------------------------------------------------------------------
+# Evaluate
 
+rmse(train$IncomeXGB, train$Income)
+rmse(test$IncomeXGB, test$IncomeTruth)
+
+# Errors
+train[, SE := (IncomeXGB-Income)^2]
+test[, SE := (IncomeXGB-IncomeTruth)^2]
+test[order(SE)]
 
 
 
