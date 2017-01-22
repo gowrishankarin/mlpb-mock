@@ -1,7 +1,10 @@
 #MLPB Practice
 
+MLPB
+https://github.com/ben519/MLPB
 
-Ref: http://stats.stackexchange.com/questions/221358/how-to-deal-with-hierarchical-nested-data-in-machine-learning
+Hierarchical Nested Data 
+http://stats.stackexchange.com/questions/221358/how-to-deal-with-hierarchical-nested-data-in-machine-learning
 
 
 Reusing a model
