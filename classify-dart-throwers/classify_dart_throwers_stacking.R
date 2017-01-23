@@ -77,7 +77,7 @@ for(i in seq_len(nrow(knnCV[["ParamGrid"]]))) {
         knnCV[["BestScores"]] <- scores
         knnCV[["BestScore"]] <- score
         knnCV[["BestParams"]] <- knnCV[["ParamGrid"]][i]
-        knnCV[["BestPreds"]] <- rbindlist(predList)
+        knnCV[["BestPreds"]] <- rbindlist(predsList)
     }
 }
 
@@ -87,6 +87,82 @@ knnCV[["BestParams"]]
 # Plot the score for each k value 
 knnCV[["ParamGrid"]]
 ggplot(knnCV[["ParamGrid"]], aes(x=k, y=Score)) + geom_line() + geom_point()
+
+#=========================================
+# SVM
+#
+# Do a grid search for k = 1, 2, ... 30 by cross validating model using folds 1-5
+# ie [test=f1, train=(f2, f2, f4, f5)], [test=f2, train=(f1, f3, f4, f5)], ...
+
+svmCV <- list()
+svmCV[["Features"]] <- c("XCoord", "YCoord", "DistFromCenter")
+svmCV[["ParamGrid"]] <- CJ(type=1.5, cost=c(0.01, 0.1, 1, 10, 100, 1000, 2000), Score=NA_real_)
+svmCV[["BestScore"]] <- 0
+
+# Loop through eahc set of parameters
+for(i in seq_len(nrow(svmCV[["ParamGrid"]]))) {
+    
+    # Get the ith set of parameters
+    
+    # Build an empty vector to stroe scores from each train/test fold
+    scores <- numeric()
+    
+    # Buidl an empty list ot store predictions frome each train/test fold
+    predsList <- list()
+    
+    # Loop through each test fold, fit model to training folds and make predictions on test fold
+    
+    for(foldID in 1:5) {
+        # Build the train/test folds
+        testFold <- train[J(FoldID=foldID), on="FoldID"]
+        trainFolds <- train[!J(FoldID = foldID), on="FoldID"] # Exclude fold i from trainFolds
+        
+        # Train the model and make predictions
+        svm <- LiblineaR(
+            data = trainFolds[, svmCV$Features, with=FALSE],
+            target = trainFolds$Competitor,
+            type = params$type,
+            cost = params$cost
+        )
+        
+        testFold[, Pred := predict(svm, testFold[, svmCV$Features, with=FALSE])$predictions]
+        predsList <- c(predsList, list(testFold[, list(ID, FoldID, Pred)]))
+        
+        # Evaluate predictions and append score to scores vector
+        score <- mean(testFold$Pred == testFold$Competitor)
+        scores <- c(scores, score)
+    }
+    
+    # Measure the overall score. If best, tell svmCV
+    score <- mean(scores)
+    
+    # Insert the score into ParamGrid
+    svmCV[["ParamGrid"]][i, Score := score][]
+    print(paste("Params:", paste(colnames(svmCV[["ParamGrid"]][i]), svmCV[["ParamGrid"]][i], collapse = " | ")))
+    
+    if(score > svmCV[["BestScore"]]) {
+        svmCV[["BestScores"]] <- scores
+        svmCV[["BestScore"]] <- score
+        svmCV[["BestParams"]] <- svmCV[["ParamGrid"]][i]
+        svmCV[["BestPreds"]] <- rbindlist(predlist)
+    }
+}
+
+# Check the best params
+svmCV[["BestParams"]]
+
+# Plot the score for each (cost, type) pairs
+svmCV[["ParamGrid"]]
+ggplot(svmCV[["ParamGrid"]], aes(x=cost, y=Score, color=factor(type))) + geom_line() + geom_point()
+
+
+
+
+
+
+
+
+
 
 
 
