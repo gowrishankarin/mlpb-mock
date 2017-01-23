@@ -18,7 +18,7 @@ jobtitles <- read.csv("_data/jobtitles.csv", na.strings = c("NA", ""))
 my.corpus <- VCorpus(VectorSource(jobtitles$job_title))
 
 # now build a document term matrix
-dtm <- DocumetTermMatrix(my.corpus)
+dtm <- DocumentTermMatrix(my.corpus)
 
 # inspect the results
 inspect(dtm)
