@@ -96,14 +96,14 @@ ggplot(knnCV[["ParamGrid"]], aes(x=k, y=Score)) + geom_line() + geom_point()
 
 svmCV <- list()
 svmCV[["Features"]] <- c("XCoord", "YCoord", "DistFromCenter")
-svmCV[["ParamGrid"]] <- CJ(type=1.5, cost=c(0.01, 0.1, 1, 10, 100, 1000, 2000), Score=NA_real_)
+svmCV[["ParamGrid"]] <- CJ(type=1:5, cost=c(0.01, 0.1, 1, 10, 100, 1000, 2000), Score=NA_real_)
 svmCV[["BestScore"]] <- 0
 
 # Loop through eahc set of parameters
 for(i in seq_len(nrow(svmCV[["ParamGrid"]]))) {
     
     # Get the ith set of parameters
-    
+    params <- svmCV[["ParamGrid"]][i]
     # Build an empty vector to stroe scores from each train/test fold
     scores <- numeric()
     
@@ -144,7 +144,7 @@ for(i in seq_len(nrow(svmCV[["ParamGrid"]]))) {
         svmCV[["BestScores"]] <- scores
         svmCV[["BestScore"]] <- score
         svmCV[["BestParams"]] <- svmCV[["ParamGrid"]][i]
-        svmCV[["BestPreds"]] <- rbindlist(predlist)
+        svmCV[["BestPreds"]] <- rbindlist(predsList)
     }
 }
 
