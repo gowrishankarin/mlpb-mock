@@ -156,13 +156,109 @@ svmCV[["ParamGrid"]]
 ggplot(svmCV[["ParamGrid"]], aes(x=cost, y=Score, color=factor(type))) + geom_line() + geom_point()
 
 
+# Ensemble KNN, SVM using Logistic Regression
+
+# Extract Predictions
+metas.knn <- knnCV[["BestPreds"]]
+metas.svm <- svmCV[["BestPreds"]]
 
 
+# Insert regular predictions into train
+train[metas.knn, Meta.knn := Pred, on = "ID"]
+train[metas.svm, Meta.svm := Pred, on = "ID"]
 
+# One-hot encode predictions
+train <- one_hot(train, cols=c("Meta.knn", "Meta.svm"), dropCols=FALSE)
 
+#-------------------------------------------------------------------
+# Cross Validation
 
+lrCV <- list()
+lrCV[["Features"]] <- setdiff(colnames(train), c("ID", "FoldID", "Competitor", "Meta.knn", "Meta.svm"))
+lrCV[["ParamGrid"]] <- CJ(type=c(0, 6, 7), cost = c(0.001, 0.01, 0.1, 1, 10, 100))
+lrCV[["BestScore"]] <- 0
 
+# Loop through each set of parameters
+for(i in seq_len(nrow(lrCV[["ParamGrid"]]))) {
 
+    # Get the ith set of parameters
+    params <- lrCV[["ParamGrid"]][i]
+
+    # Build an empty vector to store scores from each train/test fold
+    scores <- numeric()
+
+    # Build an empty list to stroe predictions from each train/test fold
+    predsList <- list()
+
+    for(foldID in 1:5) {
+        # Build the train/test folds
+        testFold <- train[J(FoldID = foldID), on="FoldID"]
+        trainFolds <- train[!J(FoldID = foldID), on = "FoldID"] # Exclude fold i from trainFolds
+
+        # Train the model and make predictions
+        logreg <- LiblineaR(
+            data = trainFolds[, lrCV$Features, with = FALSE],
+            target = trainFolds$Competitor,
+            type = params$type,
+            cost = params$cost
+        )
+
+        testFold[, Pred := predict(logreg, testFold[, lrCV$Features, with = FALSE])$predictions]
+        predsList <- c(predsList, list(testFold[, list(ID, FoldID, Pred)]))
+
+        # Evaluate predictions (accuracy rate) and append score to scores
+        score <- mean(testFold$Pred == testFold$Competitor)
+        scores <- c(scores, score)
+    }
+
+    # Measure the overall score. If best, tell lrCV
+    score <- mean(scores)
+
+    # Insert the score into ParamGrid
+    lrCV[["ParamGrid"]][i, Score := score][]
+    print(paste("Params:", paste(colnames(lrCV[["ParamGrid"]][i]), lrCV[["ParamGrid"]][i], collapse = " | ")))
+
+    if(score > lrCV[["BestScore"]]) {
+        lrCV[["BestScores"]] <- scores
+        lrCV[["BestScore"]] <- score
+        lrCV[["BestParams"]] <- lrCV[["ParamGrid"]][i]
+        lrCV[["BestPreds"]] <- rbindlist(predsList)
+    }
+}
+
+knnCV[["BestParams"]]
+svmCV[["BestParams"]]
+lrCV[["BestParams"]]
+
+#===================================================================================
+# Make predictions on the holdout set
+
+# knn
+test[, Meta.knn := knn(train = train[, knnCV$Features, with = FALSE], test = test[, knnCV$Features, with=FALSE], cl = train$Competitor, k = knnCV$BestParams$k)]
+
+# svm
+svm <- LiblineaR(
+    data = train[, svmCV$Features, with = FALSE], 
+    target = train$Competitor, 
+    type = svmCV$BestParams$type, 
+    cost=svmCV$BestParams$cost
+)
+test[, Meta.svm := predict(svm, test[, svmCV$Features, with=FALSE])$predictions]
+
+# ensemble
+test <- one_hot(test, cols=c("Meta.knn", "Meta.svm"), dropCols=FALSE)
+logreg <- LiblineaR(
+    data = trainFolds[, lrCV$Features, with=FALSE], 
+    target = trainFolds$Competitor,
+    type = lrCV$BestParams$type,
+    cost = lrCV$BestParams$cost
+)
+test[, Pred.ensemble := predict(logreg, test[, lrCV$Features, with = FALSE])$predictions]
+
+# Results
+mean(test$Competitor == test$Meta.knn)
+mean(test$Competitor == test$Meta.svm)
+mean(test$Competitor == test$Pred.ensemble)
 
 
 
