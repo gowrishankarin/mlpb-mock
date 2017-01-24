@@ -1,8 +1,10 @@
 options(scipen = 20, digits = 4)
 
 # Load Packages
-library(randomForest)
-
+lapply(c(
+    "data.table",
+    "randomForest"
+), require, character.only=T)
 
 train <- fread("_data/train.csv")
 test <- fread("_data/test.csv")
@@ -16,23 +18,19 @@ test <- fread("_data/test.csv")
 # You could also convert to integers {0, 1})
 
 train$SaintsAtHome <- factor(train$SaintsAtHome, levels=c("FALSE", "TRUE"))
-train$Expert1PredWin <- factor(train$Expert1PredWin, levels = c("FALSE", "TRUE"))
-train$Expert2PredWin <- factor(train$Expert2PredWin, levels = c("FALSE", "TRUE"))
-train$SaintsWon <- factor(train$SaintsWon, levels = c("FALSE", "TRUE"))
-
-test$SaintsAtHome <- factor(test$SaintsAtHome, levels = c("FALSE", "TRUE"))
-test$Expert1PredWin <- factor(test$Expert1PredWin, levels = c("FALSE", "TRUE"))
-test$Expert2PredWin <- factor(test$Expert2PredWin, levels = c("FALSE", "TRUE"))
+train$Expert1PredWin <- factor(train$Expert1PredWin, levels=c("FALSE", "TRUE"))
+train$Expert2PredWin <- factor(train$Expert2PredWin, levels=c("FALSE", "TRUE"))
+train$SaintsWon <- factor(train$SaintsWon, levels=c("FALSE", "TRUE"))
+test$SaintsAtHome <- factor(test$SaintsAtHome, levels=c("FALSE", "TRUE"))
+test$Expert1PredWin <- factor(test$Expert1PredWin, levels=c("FALSE", "TRUE"))
+test$Expert2PredWin <- factor(test$Expert2PredWin, levels=c("FALSE", "TRUE"))
 
 #---------------------------------------------------------
 # Split the training features from the target
 
 train_X <- train[, c("Opponent", "OppRk", "SaintsAtHome", "Expert1PredWin", "Expert2PredWin")]
 test_X <- test[, c("Opponent", "OppRk", "SaintsAtHome", "Expert1PredWin", "Expert2PredWin")]
-test_X$Opponent <- factor(
-    test_X$Opponent,
-    levels = levels(train_X$Opponent)
-) # Make sure the levels of opponent in test are the same as train
+test_X$Opponent <- factor(test_X$Opponent, levels=levels(train_X$Opponent))  # Make sure the levels of Opponent in test are the same as train
 train_y <- train$SaintsWon
 
 #====================================================
