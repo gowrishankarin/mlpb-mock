@@ -20,9 +20,9 @@ train$Expert1PredWin <- factor(train$Expert1PredWin, levels = c("FALSE", "TRUE")
 train$Expert2PredWin <- factor(train$Expert2PredWin, levels = c("FALSE", "TRUE"))
 train$SaintsWon <- factor(train$SaintsWon, levels = c("FALSE", "TRUE"))
 
-test$SaintsAtHome <- factor(tst$SaintsAtHome, levels = c("FALSE", "TRUE"))
+test$SaintsAtHome <- factor(test$SaintsAtHome, levels = c("FALSE", "TRUE"))
 test$Expert1PredWin <- factor(test$Expert1PredWin, levels = c("FALSE", "TRUE"))
-test$Expert2PredWin <- factor(test$Export2PredWin, levels = c("FALSE", "TRUE"))
+test$Expert2PredWin <- factor(test$Expert2PredWin, levels = c("FALSE", "TRUE"))
 
 #---------------------------------------------------------
 # Split the training features from the target
