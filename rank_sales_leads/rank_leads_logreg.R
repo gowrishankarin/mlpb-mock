@@ -64,7 +64,7 @@ setnames(
     paste0("AC", colnames(train_dummies))
 ) # Prefix each column name with "AC"
 setnames(train_dummies, "ACLeadID", "LeadID") # Change "ACLeadID" back to "LeadID"
-test <- test_dummies[test, on="LeadID"] # Merge the dummy columns back to the test dataset
+train <- train_dummies[train, on="LeadID"] # Merge the dummy columns back to the test dataset
 
 test_dummies <- dcast(
     test[, list(LeadID, AreaCode)],
