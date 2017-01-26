@@ -158,7 +158,7 @@ trainM <- do.call(cBind, list(trainNonSparseFeats, trainTOBSparseM, trainAreaCod
 testM <- do.call(cBind, list(testNonSparseFeats, testTOBSparseM, testAreaCodeSparseM, testExtensionSparseM))
 
 # Extract the column names of the matrix into a vector called 'features'
-features <- c(dimnames(trainM[[2]]))
+features <- c(dimnames(trainM)[[2]])
 
 #===================================================
 # XGBoost Model
@@ -181,7 +181,7 @@ bst <- xgboost(params=boostingParams, data=trainM, label=as.matrix(train$Sale)*1
 #----------------------------------------------------
 # Check the feature importance
 
-xgb.importance(bst, featuer_names=features)
+xgb.importance(bst, feature_names=features)
 
 #=====================================================
 # Make some predictions on the test set & evaluage the results
